@@ -24,3 +24,7 @@ app.use("/api/freelancer", require("./routes/freelancerRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 
 app.use("/api/job", require("./routes/jobRoutes"));
+
+app.get('/',(req,res)=>{
+    res.send('hello hamza')
+})
