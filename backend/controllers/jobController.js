@@ -1,0 +1,390 @@
+const bcrypt = require('bcryptjs');
+const jwt = require("jsonwebtoken");
+const asyncHandler = require("express-async-handler");
+//models
+const Admin = require('../models/adminModel')
+const Client = require('../models/clientModel')
+const Freelancer = require('../models/freelancerModel')
+const ExchangeSkills = require('../models/exchangeSkills');
+const proposalModel = require('../models/proposalModel');
+const exchangeSkills = require('../models/exchangeSkills');
+
+const jobModel = require('../models/jobModel');
+const jobProposal = require('../models/jobProposal');
+
+
+// add job
+const addJob = asyncHandler(async (req, res) => {
+
+    const { title, discription, country, duration, budget, skills, experienceLevel, category } = req.body;
+
+    if (!title || !discription || !country || !duration || !budget || !skills || !experienceLevel || !category) {
+        return res.status(400).json({ errorMessage: "Please fill all the  field" });
+    }
+
+    // Check for client
+    if (!req.client) {
+        return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+    }
+    const { id } = req.client
+
+    const client = await Client.findOne({ _id :id });
+
+    if (!client) {
+        return res.status(403).json({ errorMessage: "Unauthorized" });
+    }
+
+    // add exchangeSkills  to database 
+    const response = await jobModel.create({
+        client: id,
+        title,
+        discription,
+        country,
+        duration,
+        budget,
+        skills,
+        experienceLevel,
+        category
+    });
+
+    if (response) {
+        return res.status(201).json({ response });
+    } else {
+        return res.status(400).json({ errorMessage: "Error While  Adding Job Data" });
+    }
+});
+
+
+ /// get all jobs
+ const getAllJobs = asyncHandler(async (req, res) => {
+  
+    let response = await jobModel.find({ }).populate("client")
+  
+    if(!response){
+   return  res.status(404).json({errorMessage : "No Record Found"})
+    }
+  
+  return res.status(200).json({response})
+  });
+
+   /// get all jobs
+ const   getOneJob = asyncHandler(async (req, res) => {
+  const {_id } =req.params;
+  console.log(_id)
+    let response = await jobModel.find({_id :_id }).populate("client")
+    let proposals = await proposalModel.find({ job :_id});
+    if(!response){
+   return  res.status(404).json({errorMessage : "No Record Found"})
+    }
+  
+  return res.status(200).json({response , proposalCount : proposals.length })
+  });
+
+// update/patch  job controller 
+const updateJob = asyncHandler(async (req, res) => {
+    const _id = req.params._id;
+
+    const { title, discription, country, duration, budget, skills, experienceLevel, category } = req.body;
+
+    if (!title || !discription || !country || !duration || !budget || !skills || !experienceLevel || !category) {
+        return res.status(400).json({ errorMessage: "Please fill all the  field" });
+    }
+
+    // Check for client
+    if (!req.client) {
+        return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+    }
+    const { id } = req.client
+
+    const client = await Client.findOne({ _id:id });
+
+    if (!client) {
+        return res.status(403).json({ errorMessage: "Unauthorized" });
+    }
+
+    let doc = await jobModel.findOne({ _id: _id });
+
+    if (!doc) {
+        return res.status(403).json({ errorMessage: "Unauthorized" });
+    }
+
+    doc = await jobModel.findOne({ _id, client: id });
+    if (!doc) {
+        return res.status(403).json({ errorMessage: "User is not authorized to access this resource" });
+    }
+
+    const filtr = { _id: _id }
+    let update = {
+        title,
+        discription,
+        country,
+        duration,
+        budget,
+        skills,
+        experienceLevel,
+        category
+    }
+
+    let result = await jobModel.findOneAndUpdate(filtr, update);
+    await result.save();
+
+    const response = await jobModel.findOne({ _id: _id })
+
+    return res.status(200).json(response)
+
+});
+
+//   delete  ExchangeSkills 
+const deletejob = asyncHandler(async (req, res) => {
+    const  _id  = req.params._id
+    // Check for admin
+    if (!req.client) {
+         return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+    }
+
+    const { id } = req.client
+    const client = await Client.findOne({_id :id });
+
+    if (!client) {
+        return res.status(403).json({ errorMessage: "Unauthorized" });
+    }
+
+    let jobmodel = await jobModel.findOne({ _id: _id , client : id})
+
+    if (jobmodel) {
+        let result = await jobModel.deleteOne({ _id: _id })
+
+        if (result.deletedCount == 1) {
+            let response = await jobProposal.deleteMany({ job: _id })
+            console.log(response)
+            if (response.deletedCount) {
+                return res.status(200).json(`Jobs And ${response.deletedCount} Submitted Proposals On Jobs  Successfully Deleted`)
+            }
+            else {
+                return res.status(200).json(`Jobs And 0 Submitted Proposals On Jobs  Successfully Deleted`)
+            }
+        }
+        else {
+            return res.status(400).json({ errorMessage: "Error Occured" });
+        }
+    } else {
+        return res.status(403).json({ errorMessage: "Unauthorized" });
+    }
+})
+
+
+//submit proposal 
+const submitProposal = asyncHandler(async (req, res) => {
+console.log('jhbfytdtghc')
+    const { job, bid, duration, coverLetter, recentExperience, socialMediaLinks } = req.body;
+
+    const attachment = req.file.path;
+
+    if (!bid || !duration || !coverLetter || !recentExperience || !socialMediaLinks || !attachment || !job) {
+        return res.status(400).json({ errorMessage: "Please fill all the  field" });
+    }
+
+    // Check for freelancer
+    if (!req.freelancer) {
+        return res.status(401).json({ errorMessage: "User Cannot access this Route" });
+    }
+    const { id } = req.freelancer
+
+    const freelancerExists = await Freelancer.findOne({ _id: id });
+
+    if (!freelancerExists) {
+        return res.status(403).json({ errorMessage: "Unauthorized" });
+    }
+console.log()
+    const Job = await jobModel.findOne({ _id: job });
+    if (Job) {   
+    // add job proposal  to database 
+        const response = await jobProposal.create({
+            submittedBy: id,
+            client: Job.client,
+            job,
+            bid,
+            duration,
+            coverLetter,
+            recentExperience,
+            socialMediaLinks,
+            attachment
+        });
+
+        if (response) {
+            res.status(201).json({
+                _id: response._id,
+                submittedBy: response.submittedBy,
+                Client: response.client,
+                job: response.job,
+                Bid: response.bid,
+                duration: response.duration,
+                coverLetter: response.coverLetter,
+                recentExperience: response.recentExperience,
+                socialMediaLinks: response.socialMediaLinks,
+                attachment: response.attachment,
+                status: response.status,
+                updated: response.updated
+            });
+        } else {
+            return res.status(400).json({ errorMessage: "Error While  Adding Exchange Skills Data" });
+        }
+    }
+
+});
+  
+// update proposal
+
+const updateProposals = asyncHandler(async (req, res) => {
+
+    const { bid, duration, coverLetter, recentExperience, socialMediaLinks } = req.body;
+    const attachment = req.file.path;
+    const updated = 1
+    // Check for freelancer
+    if (!req.freelancer) {
+      return res.status(401).json({ errorMessage: "User Cannot access this Route" });
+    }
+    const { id } = req.freelancer
+    const  _id  = req.params._id;
+    console.log(req.params)
+    let doc = await Freelancer.findOne({ _id : id });
+  
+    if (!doc) {
+     return  res.status(403).json({ errorMessage: "Unauthorized" });
+    }
+  
+    doc = await jobProposal.findOne({ _id, submittedBy: id });
+   
+    if (!doc) {
+      res.status(403).json({ errorMessage: "User is not authorized to access this resource" });
+    }
+  
+    const filter = { _id: _id, submittedBy: id }
+    // update proposal 
+    let update = {
+      bid,
+      duration,
+      coverLetter,
+      recentExperience,
+      socialMediaLinks,
+      attachment,
+      updated
+    }
+  
+    let result = await jobProposal.findOneAndUpdate(filter, update);
+    await result.save();
+  
+    const response = await jobProposal.findOne({ _id: _id })
+  
+    if (response) {
+      res.status(201).json({
+        _id: response._id,
+        submittedBy: response.submittedBy,
+        Bid: response.bid,
+        duration: response.duration,
+        coverLetter: response.coverLetter,
+        recentExperience: response.recentExperience,
+        socialMediaLinks: response.socialMediaLinks,
+        attachment: response.attachment,
+        status: response.status,
+        updated: response.updated
+      });
+    } else {
+      res.status(400).json({ errorMessage: "Error While  Adding Exchange Skills Data" });
+    }
+  });
+  
+
+//getJobProposalsForFreelancer
+
+const getJobProposalsForFreelancer = asyncHandler(async (req, res) => {
+
+    // Check for freelancer
+    if (!req.freelancer) {
+     return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+    }
+    const { id } = req.freelancer
+    const {_id} =req.params;
+    console.log(_id)
+    const freelancerExists = await Freelancer.findOne({ _id : id });
+  
+    if (!freelancerExists) {
+    return   res.status(403).json({ errorMessage: "Unauthorized" });
+    }
+  
+    let response = await jobProposal.find({  job : _id ,submittedBy : id }).populate("job").populate("client")
+  
+    if(!response){
+   return  res.status(404).json({errorMessage : "No Record Found"})
+    }
+  
+  return res.status(200).json({response , proposalCount : response.length })
+  });
+
+
+ /// getJobProposals for client
+ const getJobProposalsForClient = asyncHandler(async (req, res) => {
+
+    // Check for freelancer
+    if (!req.client) {
+     return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+    }
+    const { id } = req.client
+    const {_id} =req.params;
+  
+    const clinetExist = await Client.findOne({ _id : id });
+  
+    if (!clinetExist) {
+    return   res.status(403).json({ errorMessage: "Unauthorized" });
+    }
+  
+    let response = await jobProposal.find({  job : _id ,client : id }).populate("job").populate("submittedBy")
+  
+    if(!response){
+   return  res.status(404).json({errorMessage : "No Record Found"})
+    }
+  
+  return res.status(200).json({response , proposalCount : response.length })
+  });
+
+
+   /// getJob for client
+ const getJobForFreelancer = asyncHandler(async (req, res) => {
+
+    // Check for freelancer
+    if (!req.freelancer) {
+     return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+    }
+    const { id } = req.freelancer
+  
+    const freelancerExist = await Freelancer.findOne({ _id : id });
+  
+    if (!freelancerExist) {
+    return   res.status(403).json({ errorMessage: "Unauthorized" });
+    }
+    let response = await jobProposal.find({ submittedBy : id }).populate("job")
+  
+    if(!response){
+   return  res.status(404).json({errorMessage : "No Record Found"})
+    }
+  
+  return res.status(200).json({response , JobCount : response.length })
+  });
+
+
+  
+  
+  
+module.exports = {
+    addJob,
+    updateJob ,
+    deletejob,
+    submitProposal,
+    getJobProposalsForFreelancer,
+    updateProposals,
+    getJobProposalsForClient,
+    getAllJobs,
+    getOneJob,
+    getJobForFreelancer,
+    
+}
