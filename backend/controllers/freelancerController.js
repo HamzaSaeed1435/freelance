@@ -20,7 +20,7 @@ const {
 const { validate } = require("../models/freelancerModel");
 const { promises } = require("nodemailer/lib/xoauth2");
 const { response } = require("express");
-
+const { saveNotifcation } = require('../utils/Notification')
 
 const getFreelancers = asyncHandler(async (req, res) => {
   const freelancers = await Freelancer.find();
@@ -410,6 +410,7 @@ const addExchangeSkills = asyncHandler(async (req, res) => {
   });
 
   if (response) {
+    await saveNotifcation(id , id , response._id , 'Exchange Skills Successfully Added ' ,  title)
    return res.status(201).json({
       _id: response._id,
       freelancer: response.freelancer,
@@ -520,6 +521,7 @@ const updateExchangeSkills = asyncHandler(async (req, res) => {
   }
 
   let result = await exchangeSkills.findOneAndUpdate(filtr, update);
+  await saveNotifcation(id , id , result._id , 'Exchange Skills Successfully Updated ' ,  result.title)
   await result.save();
 
   const response = await exchangeSkills.findOne({ _id: _id })
@@ -568,6 +570,7 @@ const submitProposal = asyncHandler(async (req, res) => {
   });
 
   if (response) {
+    await saveNotifcation(id , freelancer.freelancer , response._id , 'Proposal has added On your Exchange Skills ' , coverLetter)
    return res.status(201).json({
       _id: response._id,
       submittedBy: response.submittedBy,
@@ -628,8 +631,9 @@ const updateProposal = asyncHandler(async (req, res) => {
   await result.save();
 
   const response = await proposal.findOne({ _id: _id })
-
+  const freelancer = await exchangeSkills.findOne({ _id : doc.exchangeSkillsId });
   if (response) {
+    await saveNotifcation(id ,freelancer.freelancer , _id , 'Proposal has Updated On your Exchange Skills ' , coverLetter)
    return res.status(201).json({
       _id: response._id,
       submittedBy: response.submittedBy,
@@ -780,7 +784,7 @@ const acceptProposals = asyncHandler(async (req, res) => {
   }
 
   let result = await proposal.findOneAndUpdate(filter, update)
-
+  await saveNotifcation(id ,result.submittedBy ,  _id , 'Your Proposal has accepted ' , result.coverLetter)
   await result.save()
   const response = await proposal.findOne({ _id });
 
@@ -828,7 +832,7 @@ const rejectProposals = asyncHandler(async (req, res) => {
   }
 
   let result = await proposal.findOneAndUpdate(filter, update)
-
+  await saveNotifcation(id , result.submittedBy ,  _id , 'Your Proposal has Rejected ' , result.coverLetter)
   await result.save()
   const response = await proposal.findOne({ _id });
 
@@ -872,7 +876,7 @@ const contourProposals = asyncHandler(async (req, res) => {
   }
 
   let result = await proposal.findOneAndUpdate(filter, update)
-
+  await saveNotifcation(id , result.submittedBy ,  _id , 'User Commented On your Proposal ' , result.coverLetter)
   await result.save()
   const response = await proposal.findOne({ _id });
 

@@ -26,8 +26,13 @@ app.listen(port, () => console.log(`Server started on port ${port}`));
 app.use("/api/client", require("./routes/clientRoutes"));
 app.use("/api/freelancer", require("./routes/freelancerRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
-
 app.use("/api/job", require("./routes/jobRoutes"));
+
+app.use("/api/blog", require("./routes/blog.Routes"));
+app.use("/api/gig", require("./routes/gig.Routes"));
+app.use("/api", require("./routes/notifications.Routes"));
+
+
 
 app.get('/', (req, res) => {
   res.send('hello hamza')

@@ -7,11 +7,11 @@ const notifySchema = mongoose.Schema(
     
     context: { type: String, required: true },
     
-    sendto: [{type: mongoose.Schema.Types.ObjectId , ref: 'Freelancer' }],
+    sendto: {type: mongoose.Schema.Types.ObjectId , ref: 'Freelancer' },
 
-    sendfrom: [{type: mongoose.Schema.Types.ObjectId, ref: 'Client' }],
+    sendfrom: {type: mongoose.Schema.Types.ObjectId, ref: 'Client' },
 
-    gig_id: [{type: mongoose.Schema.Types.ObjectId, ref: 'GIGS' }]
+    id: {type: mongoose.Schema.Types.ObjectId }
 
   },{
     timestamps: true,

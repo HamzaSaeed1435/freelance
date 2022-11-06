@@ -13,7 +13,9 @@ const jobModel = require('../models/jobModel');
 const jobProposal = require('../models/jobProposal');
 const paymentModel = require('../models/payment')
 const {createCharges} = require('../utils/charges')
+const { saveNotifcation } = require('../utils/Notification')
 // add job
+
 const addJob = asyncHandler(async (req, res) => {
 
     const { title, discription, country, duration, budget, skills, experienceLevel, category } = req.body;
@@ -48,6 +50,7 @@ const addJob = asyncHandler(async (req, res) => {
     });
 
     if (response) {
+      await saveNotifcation(id , id , response._id , 'job Successfully Added ' ,  title)
         return res.status(201).json({ response });
     } else {
         return res.status(400).json({ errorMessage: "Error While  Adding Job Data" });
@@ -126,11 +129,14 @@ const updateJob = asyncHandler(async (req, res) => {
     }
 
     let result = await jobModel.findOneAndUpdate(filtr, update);
-    await result.save();
+    if(result){
+      await saveNotifcation(id , id , result._id , 'job Successfully Updated ' ,  result.title)
+      await result.save();
 
-    const response = await jobModel.findOne({ _id: _id })
-
-    return res.status(200).json(response)
+      const response = await jobModel.findOne({ _id: _id })
+  
+      return res.status(200).json(response)
+    }
 
 });
 
@@ -153,10 +159,11 @@ const deletejob = asyncHandler(async (req, res) => {
 
     if (jobmodel) {
         let result = await jobModel.deleteOne({ _id: _id })
+        await saveNotifcation(id , id , _id , 'Job Successfully Deleted ' ,  jobmodel.title)
 
         if (result.deletedCount == 1) {
             let response = await jobProposal.deleteMany({ job: _id })
-            console.log(response)
+            
             if (response.deletedCount) {
                 return res.status(200).json(`Jobs And ${response.deletedCount} Submitted Proposals On Jobs  Successfully Deleted`)
             }
@@ -175,7 +182,7 @@ const deletejob = asyncHandler(async (req, res) => {
 
 //submit proposal 
 const submitProposal = asyncHandler(async (req, res) => {
-console.log('jhbfytdtghc')
+
     const { job, bid, duration, coverLetter, recentExperience, socialMediaLinks } = req.body;
 
     const attachment = req.file.path;
@@ -195,7 +202,7 @@ console.log('jhbfytdtghc')
     if (!freelancerExists) {
         return res.status(403).json({ errorMessage: "Unauthorized" });
     }
-console.log()
+
     const Job = await jobModel.findOne({ _id: job });
     if (Job) {   
     // add job proposal  to database 
@@ -212,6 +219,8 @@ console.log()
         });
 
         if (response) {
+          await saveNotifcation(id , Job.client , response._id , 'Proposal has added On Job ' ,  response.coverLetter)
+
             res.status(201).json({
                 _id: response._id,
                 submittedBy: response.submittedBy,
@@ -246,7 +255,7 @@ const updateProposals = asyncHandler(async (req, res) => {
     }
     const { id } = req.freelancer
     const  _id  = req.params._id;
-    console.log(req.params)
+   
     let doc = await Freelancer.findOne({ _id : id });
   
     if (!doc) {
@@ -277,6 +286,9 @@ const updateProposals = asyncHandler(async (req, res) => {
     const response = await jobProposal.findOne({ _id: _id })
   
     if (response) {
+
+      await saveNotifcation(id , response.client, _id ,'Proposal has Updated By freelancer' , response.coverLetters)
+
       res.status(201).json({
         _id: response._id,
         submittedBy: response.submittedBy,
@@ -421,6 +433,7 @@ const acceptJobProposal = asyncHandler(async (req, res) => {
    let result = await jobProposal.findOneAndUpdate(filter, update)
 
   if(result){
+    await saveNotifcation(id , result.submittedBy , _id ,'Your Proposal has been accepted !' , result.coverLetters)
     await result.save()
     const response = await jobProposal.findOne({ _id });
   
@@ -473,7 +486,7 @@ const acceptJobProposal = asyncHandler(async (req, res) => {
     }
   
     let result = await jobProposal.findOneAndUpdate(filter, update)
-  
+    await saveNotifcation(id , result.submittedBy , _id ,'Your Proposal has been Rejected !' , result.coverLetters)
     await result.save()
     const response = await jobProposal.findOne({ _id });
   
