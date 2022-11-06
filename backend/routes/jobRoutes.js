@@ -11,7 +11,8 @@ const {
     getJobProposalsForClient,
     getOneJob,
     getJobForFreelancer,
-   
+    acceptJobProposal,
+    rejectJobProposal
 } = require("../controllers/jobController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -59,7 +60,9 @@ router.route('/submitProposal').post(protect , upload.single('attachment') ,subm
 
 router.route('/proposal/:_id').patch(protect , upload.single('attachment') , updateProposals)  //update  proposal
 
+router.route('/proposal/accept/:_id').patch(protect , acceptJobProposal)    //acept proposal
 
+router.route('/proposal/reject/:_id').patch(protect , rejectJobProposal)    //reject proposal
 
 router.route('/proposals/:_id').get(protect , getJobProposalsForFreelancer)   // get job proposals for freelancer
 

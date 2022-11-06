@@ -787,7 +787,8 @@ const acceptProposals = asyncHandler(async (req, res) => {
   const order = await OrderModel.create({
     proposalId: _id,
     submittedBy: response.submittedBy,
-    freelancer: _id
+    freelancer: _id,
+    type : 'ExchangeSkills'
   });
 
   if(order)return res.status(200).json(order)

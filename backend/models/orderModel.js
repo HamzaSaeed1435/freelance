@@ -11,9 +11,21 @@ const OrderModel = mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Freelancer',
     },
+    price :{
+      type : Number,
+      require : true 
+    },
     freelancer:{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Freelancer'
+    },
+    client :{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Client'
+    },
+    type:{
+      type:String,
+      require:true
     }
 },
   {

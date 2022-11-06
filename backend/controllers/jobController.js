@@ -8,11 +8,11 @@ const Freelancer = require('../models/freelancerModel')
 const ExchangeSkills = require('../models/exchangeSkills');
 const proposalModel = require('../models/proposalModel');
 const exchangeSkills = require('../models/exchangeSkills');
-
+const OrderModel = require('../models/orderModel')
 const jobModel = require('../models/jobModel');
 const jobProposal = require('../models/jobProposal');
-
-
+const paymentModel = require('../models/payment')
+const {createCharges} = require('../utils/charges')
 // add job
 const addJob = asyncHandler(async (req, res) => {
 
@@ -325,7 +325,7 @@ const getJobProposalsForFreelancer = asyncHandler(async (req, res) => {
  /// getJobProposals for client
  const getJobProposalsForClient = asyncHandler(async (req, res) => {
 
-    // Check for freelancer
+    // Check for client
     if (!req.client) {
      return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
     }
@@ -371,9 +371,118 @@ const getJobProposalsForFreelancer = asyncHandler(async (req, res) => {
   return res.status(200).json({response , JobCount : response.length })
   });
 
+// accept proposal
 
+const acceptJobProposal = asyncHandler(async (req, res) => {
+   
+    // // Check for client
+    if (!req.client) {
+     return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+    }
+    const id = req.client._id;
+    const _id  = req.params._id;
+  
+    let doc =   await Client.findOne({ _id :id });
+  
+    if (!doc) {
+     return res.status(403).json({ errorMessage: "Unauthorized" });
+    }
+
+
+    doc = await jobProposal.findOne({ _id, client: id});
+    
+    if (!doc || doc.status == -1 || doc.status == 1) {
+     return res.status(403).json({ errorMessage: "User is not authorized to access this resource" });
+    }
+  
+    const authorized = await jobProposal.findOne({ _id }).populate('exchangeSkillsId');   // check whom posted this exchange skills request and then check if match then can accept because freelancer who posted can only accrpt
+  
+    // if (authorized.exchangeSkillsId.freelancer !== id) {
+    //   console.log('bye')
+    //  return res.status(403).json({ errorMessage: "User is not authorized to access this resource" });
+    // }
+  
+    let filter = { _id: _id };
+    let update = {
+      status: 1
+    }
+
+    let payment = await paymentModel.findOne({userId : id })
+   
+    if(!payment){
+       return  res.status(403).json({errorMessage : 'Please First add Payment Method !'})
+    }
+   const Charges = await  createCharges(payment.CardDetails.email , doc.bid , payment.CardDetails.customerId , payment.CardDetails.cardId)
+  
+   if(!Charges){
+    res.status(400).json({errorMessage : 'Payment failed !'})
+   }
+
+   let result = await jobProposal.findOneAndUpdate(filter, update)
+
+  if(result){
+    await result.save()
+    const response = await jobProposal.findOne({ _id });
+  
+    const order = await OrderModel.create({
+      proposalId: _id,
+      submittedBy: response.submittedBy,
+      price : doc.bid,
+      client : _id,
+      type : 'job'
+    });
+
+    if(order)
+    return res.status(200).json({Order : order , ChargesDetails : Charges })
+  }
+    
+  });
+  
+
+  const rejectJobProposal = asyncHandler(async (req, res) => {
+    // // Check for client
+    if (!req.client) {
+     return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+    }
+    const id = req.client._id;
+    const _id  = req.params._id;
+  
+    let doc =   await Client.findOne({ _id :id });
+  
+    if (!doc) {
+     return res.status(403).json({ errorMessage: "Unauthorized" });
+    }
+  
+
+    doc = await jobProposal.findOne({ _id, client: id});
+    
+    if (!doc || doc.status == -1   ||  doc.status == 1 ) {
+     return res.status(403).json({ errorMessage: "User is not authorized to access this resource" });
+    }
+  
+    const authorized = await jobProposal.findOne({ _id }).populate('exchangeSkillsId');   // check whom posted this exchange skills request and then check if match then can accept because freelancer who posted can only accrpt
+  
+    // if (authorized.exchangeSkillsId.freelancer !== id) {
+    //   console.log('bye')
+    //  return res.status(403).json({ errorMessage: "User is not authorized to access this resource" });
+    // }
+  
+    let filter = { _id: _id };
+    let update = {
+      status: -1
+    }
+  
+    let result = await jobProposal.findOneAndUpdate(filter, update)
+  
+    await result.save()
+    const response = await jobProposal.findOne({ _id });
   
   
+    if(response) return res.status(200).json(response)
+    
+  });
+  
+
   
 module.exports = {
     addJob,
@@ -386,5 +495,6 @@ module.exports = {
     getAllJobs,
     getOneJob,
     getJobForFreelancer,
-    
+    acceptJobProposal,
+    rejectJobProposal
 }

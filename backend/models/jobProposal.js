@@ -16,7 +16,7 @@ const jobProposal = mongoose.Schema(
         ref: 'jobModel',
     },
     bid: {
-      type: String,
+      type: Number,
       required: [true, "Please add  Bid"],
     },
     duration: {
