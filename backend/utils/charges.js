@@ -1,7 +1,7 @@
 const {
     promises
 } = require('nodemailer/lib/xoauth2');
-const Stripe = require('Stripe')
+const Stripe = require('stripe')
 const stripe = process.env.stripeKey;
 
 

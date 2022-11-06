@@ -42,7 +42,7 @@ app.post("/payment", protect, async (req, res) => {
   const Client = require('./models/clientModel')
   const Freelancer = require('./models/freelancerModel')
 
-  const Stripe = require('Stripe')
+  const Stripe = require('stripe')
   const stripe = process.env.stripeKey;
 
   if (!req.client && !req.freelancer) {
