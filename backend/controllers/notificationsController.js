@@ -41,7 +41,7 @@ const read_notification = async (req, res) => {
 
     const get_notification = await notify.find({
       sendto: id
-    });
+    }).populate('sendto').populate('sendfrom')
     return res.status(200).send(get_notification);
   } catch (error) {
     console.log(error)

@@ -1,7 +1,7 @@
 const NotificationModel = require('../models/notficationsModel')
 
 module.exports.saveNotifcation = (sendFrom, sendTo, id, title, context) => {
-  console.log(sendFrom)
+  
     return new Promise( async (resolve , reject) =>{
         const notification = await  NotificationModel.create({
             sendfrom: sendFrom,

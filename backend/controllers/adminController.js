@@ -8,7 +8,9 @@ const Freelancer = require('../models/freelancerModel')
 const ExchangeSkills = require('../models/exchangeSkills');
 const proposalModel = require('../models/proposalModel');
 const exchangeSkills = require('../models/exchangeSkills');
-
+const jobModel = require('../models/jobModel')
+const gigModel = require('../models/gigModel')
+const blogModel = require('../models/BlogModel')
 
 //REGISTER admin
 
@@ -268,6 +270,176 @@ const deleteExchangeSkills = asyncHandler(async (req, res) => {
     }
 })
 
+
+    //   get  job 
+    const getJobs = asyncHandler(async (req, res) => {
+        // Check for admin
+        if (!req.admin) {
+            return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+        }
+    
+        const { id } = req.admin
+        const admin = await Admin.findOne({ _id :id  });
+    
+        if (!admin) {
+            return res.status(403).json({ errorMessage: "Unauthorized" });
+        }
+    
+        let response = await jobModel.find();
+    
+        if (response) {
+            return res.status(200).json(response)
+        }
+        else {
+            return res.status(404).json({ errorMessage: "Error Occured" });
+        }
+    })
+
+                //   delete jobs 
+const deleteJobs = asyncHandler(async (req, res) => {
+    const { _id } = req.body
+        // Check for admin
+        if (!req.admin) {
+            return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+        }
+    
+        const { id } = req.admin
+        const admin = await Admin.findOne({ _id :id  });
+    
+        if (!admin) {
+            return res.status(403).json({ errorMessage: "Unauthorized" });
+        }
+
+        let job= await jobModel.findOne({_id : _id})
+
+        if(job){
+            let response = await jobModel.deleteOne({_id : _id})
+
+            if (response.deletedCount == 1) {
+                return res.status(200).json("Client Successfully Deleted")
+            }
+            else {
+                return res.status(400).json({ errorMessage: "Error Occured" });
+            }
+        }else{
+            return res.status(403).json({ errorMessage: "Unauthorized" });
+        }
+    })
+
+       //   get  gig 
+       const getGigs = asyncHandler(async (req, res) => {
+        // Check for admin
+        if (!req.admin) {
+            return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+        }
+    
+        const { id } = req.admin
+        const admin = await Admin.findOne({ _id :id  });
+    
+        if (!admin) {
+            return res.status(403).json({ errorMessage: "Unauthorized" });
+        }
+    
+        let response = await gigModel.find();
+    
+        if (response) {
+            return res.status(200).json(response)
+        }
+        else {
+            return res.status(404).json({ errorMessage: "Error Occured" });
+        }
+    })
+
+                    //   delete jobs 
+const deleteGigs= asyncHandler(async (req, res) => {
+    const { _id } = req.body
+        // Check for admin
+        if (!req.admin) {
+            return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+        }
+    
+        const { id } = req.admin
+        const admin = await Admin.findOne({ _id :id  });
+    
+        if (!admin) {
+            return res.status(403).json({ errorMessage: "Unauthorized" });
+        }
+
+        let gig= await gigModel.findOne({_id : _id})
+
+        if(gig){
+            let response = await gigModel.deleteOne({_id : _id})
+
+            if (response.deletedCount == 1) {
+                return res.status(200).json("Client Successfully Deleted")
+            }
+            else {
+                return res.status(400).json({ errorMessage: "Error Occured" });
+            }
+        }else{
+            return res.status(403).json({ errorMessage: "Unauthorized" });
+        }
+    })
+
+         //   get  blogs 
+         const getBlogs = asyncHandler(async (req, res) => {
+            // Check for admin
+            if (!req.admin) {
+                return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+            }
+        
+            const { id } = req.admin
+            const admin = await Admin.findOne({ _id :id  });
+        
+            if (!admin) {
+                return res.status(403).json({ errorMessage: "Unauthorized" });
+            }
+        
+            let response = await blogModel.find();
+        
+            if (response) {
+                return res.status(200).json(response)
+            }
+            else {
+                return res.status(404).json({ errorMessage: "Error Occured" });
+            }
+        })
+
+
+            //   delete blogs 
+const deleteBlogs = asyncHandler(async (req, res) => {
+    const { _id } = req.body
+        // Check for admin
+        if (!req.admin) {
+            return res.status(401).json({ errorMessage: "User Cannot access this Resource" });
+        }
+    
+        const { id } = req.admin
+        const admin = await Admin.findOne({ _id :id  });
+    
+        if (!admin) {
+            return res.status(403).json({ errorMessage: "Unauthorized" });
+        }
+
+        let blog= await blogModel.findOne({_id : _id})
+
+        if(blog){
+            let response = await blogModel.deleteOne({_id : _id})
+
+            if (response.deletedCount == 1) {
+                return res.status(200).json("Client Successfully Deleted")
+            }
+            else {
+                return res.status(400).json({ errorMessage: "Error Occured" });
+            }
+        }else{
+            return res.status(403).json({ errorMessage: "Unauthorized" });
+        }
+    })
+        
+
+    
+    
 module.exports = {
     registerAdmin,
     loginAdmin ,
@@ -277,5 +449,11 @@ module.exports = {
     getProposal,
     deleteFreelancer,
     deleteClients,
-    deleteExchangeSkills
+    deleteExchangeSkills,
+    getJobs,
+    getGigs,
+    getBlogs,
+    deleteBlogs,
+    deleteJobs,
+    deleteGigs
 }
